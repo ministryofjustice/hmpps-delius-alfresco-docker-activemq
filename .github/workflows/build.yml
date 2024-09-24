@@ -53,16 +53,14 @@ jobs:
           echo "activemq_version=$ACTIVEMQ_VERSION" >> $GITHUB_OUTPUT
           echo "image_created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
 
-          # QUAY_IMAGE_NAME="quay.io/${IMAGE_REGISTRY_NAMESPACE}/${IMAGE_REPOSITORY}"
-          # DOCKERHUB_IMAGE_NAME="${IMAGE_REGISTRY_NAMESPACE}/${IMAGE_REPOSITORY}"
           GHCR_IMAGE_NAME="ghcr.io/${IMAGE_REGISTRY_NAMESPACE}/${IMAGE_REPOSITORY}"
           TAG_COMMON_METADATA="${{ matrix.jdist }}${{ matrix.java_major }}-${{ matrix.base_image.flavor }}${{ matrix.base_image.major }}"
           IMAGE_TAG_SEMVER="${ACTIVEMQ_VERSION}-${TAG_COMMON_METADATA}"
           IMAGE_TAG_MINOR="${ACTIVEMQ_BASE_VERSION}-${TAG_COMMON_METADATA}"
 
           echo "tags<<EOF" >> $GITHUB_OUTPUT
-          echo "ghcr.io/${{ github.repository_owner }}/${{ steps.meta.outputs.tags }}, ghcr.io/${{github.repository_owner }}/${{ env.IMAGE_NAME }}:${IMAGE_TAG_SEMVER}" >> $GITHUB_OUTPUT
-          echo "ghcr.io/${{ github.repository_owner }}/${{ steps.meta.outputs.tags }}, ghcr.io/${{github.repository_owner }}/${{ env.IMAGE_NAME }}:${IMAGE_TAG_MINOR}" >> $GITHUB_OUTPUT
+          echo "ghcr.io/${{github.repository_owner }}/${{ env.IMAGE_NAME }}:${IMAGE_TAG_SEMVER}" >> $GITHUB_OUTPUT
+          echo "ghcr.io/${{github.repository_owner }}/${{ env.IMAGE_NAME }}:${IMAGE_TAG_MINOR}" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Log in to the Container registry
