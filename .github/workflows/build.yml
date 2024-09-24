@@ -10,8 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_REGISTRY_NAMESPACE: alfresco
-  IMAGE_REPOSITORY: alfresco-activemq
+  IMAGE_NAME: hmpps-delius-alfresco-activemq
 
 jobs:
   pre-commit:
@@ -54,44 +53,24 @@ jobs:
           echo "activemq_version=$ACTIVEMQ_VERSION" >> $GITHUB_OUTPUT
           echo "image_created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
 
-          QUAY_IMAGE_NAME="quay.io/${IMAGE_REGISTRY_NAMESPACE}/${IMAGE_REPOSITORY}"
-          DOCKERHUB_IMAGE_NAME="${IMAGE_REGISTRY_NAMESPACE}/${IMAGE_REPOSITORY}"
+          # QUAY_IMAGE_NAME="quay.io/${IMAGE_REGISTRY_NAMESPACE}/${IMAGE_REPOSITORY}"
+          # DOCKERHUB_IMAGE_NAME="${IMAGE_REGISTRY_NAMESPACE}/${IMAGE_REPOSITORY}"
+          GHCR_IMAGE_NAME="ghcr.io/${IMAGE_REGISTRY_NAMESPACE}/${IMAGE_REPOSITORY}"
           TAG_COMMON_METADATA="${{ matrix.jdist }}${{ matrix.java_major }}-${{ matrix.base_image.flavor }}${{ matrix.base_image.major }}"
+          IMAGE_TAG_SEMVER="${ACTIVEMQ_VERSION}-${TAG_COMMON_METADATA}"
+          IMAGE_TAG_MINOR="${ACTIVEMQ_BASE_VERSION}-${TAG_COMMON_METADATA}"
 
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "labels=quay.expires-after=1d" >> $GITHUB_OUTPUT
+          echo "tags<<EOF" >> $GITHUB_OUTPUT
+          echo "ghcr.io/${{ github.repository_owner }}/${{ steps.meta.outputs.tags }}, ghcr.io/${{github.repository_owner }}/${{ env.IMAGE_NAME }}:${IMAGE_TAG_SEMVER}" >> $GITHUB_OUTPUT
+          echo "ghcr.io/${{ github.repository_owner }}/${{ steps.meta.outputs.tags }}, ghcr.io/${{github.repository_owner }}/${{ env.IMAGE_NAME }}:${IMAGE_TAG_MINOR}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
-            IMAGE_TAG_PR="${ACTIVEMQ_VERSION}-${TAG_COMMON_METADATA}-pr-${{ github.event.pull_request.number}}"
-            echo "tags=${QUAY_IMAGE_NAME}:${IMAGE_TAG_PR}" >> $GITHUB_OUTPUT
-          else
-            IMAGE_TAG_SEMVER="${ACTIVEMQ_VERSION}-${TAG_COMMON_METADATA}"
-            IMAGE_TAG_MINOR="${ACTIVEMQ_BASE_VERSION}-${TAG_COMMON_METADATA}"
-
-            echo "tags<<EOF" >> $GITHUB_OUTPUT
-            echo "${QUAY_IMAGE_NAME}:${IMAGE_TAG_SEMVER}" >> $GITHUB_OUTPUT
-            echo "${QUAY_IMAGE_NAME}:${IMAGE_TAG_MINOR}" >> $GITHUB_OUTPUT
-            echo "${DOCKERHUB_IMAGE_NAME}:${IMAGE_TAG_SEMVER}" >> $GITHUB_OUTPUT
-            echo "${DOCKERHUB_IMAGE_NAME}:${IMAGE_TAG_MINOR}" >> $GITHUB_OUTPUT
-            if [ "${ACTIVEMQ_BASE_VERSION}" == "$ACTIVEMQ_LATEST_VERSION" ]; then
-              echo "${QUAY_IMAGE_NAME}:latest" >> $GITHUB_OUTPUT
-              echo "${DOCKERHUB_IMAGE_NAME}:latest" >> $GITHUB_OUTPUT
-            fi
-            echo "EOF" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Login to quay.io
-        uses: docker/login-action@v3
+      - name: Log in to the Container registry
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
         with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_PASSWORD }}
-
-      - name: Login to docker.io
-        if: github.event_name == 'push'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
